@@ -27,7 +27,7 @@ Ejemplos dados en formato .http
 
 Devuelve 400 si no se especifica la key, 404 si no existe el registro. Si todo esta correcto devuelve el registro en el cuerpo de la respuesta.
 
-```http
+```http request
 GET http://localhost:8080/{key}
 ```
 
@@ -35,7 +35,7 @@ GET http://localhost:8080/{key}
 
 Devuelve 400 si no se especifica la key, 404 si no existe el registro. Si todo esta correcto devuelve código 202 (aceptado) en la respuesta.
 
-```http
+```http request
 GET http://localhost:8080/{key}
 ```
 
@@ -44,6 +44,6 @@ GET http://localhost:8080/{key}
 Devuelve 400 si no se especifica la key, 500 hubo un error leyendo el cuerpo de la petición.
 Si todo esta correcto devuelve código 202 (aceptado) en la respuesta, significado que se efectuará con prontitud.
 
-```http
+```http request
 GET http://localhost:8080/{key}
 ```
