@@ -8,25 +8,47 @@ import (
 	"path/filepath"
 )
 
-type cacheFile struct {
-	filename string
-	content  string
+const (
+	fsWrite  = "fsWrite"
+	fsDelete = "fsDelete"
+)
+
+type writerAction struct {
+	record *record
+	action string
 }
 
 type filesystemWorker struct {
-	writer   chan cacheFile
-	basepath string
+	fsActionQueue chan writerAction
+	basepath      string
 }
 
 func newFilesystemWorker(basePath string) *filesystemWorker {
 	return &filesystemWorker{
-		writer:   make(chan cacheFile),
-		basepath: basePath,
+		fsActionQueue: make(chan writerAction),
+		basepath:      basePath,
 	}
 }
 
-func (worker *filesystemWorker) persist(key, val string) {
-	worker.writer <- cacheFile{filename: key, content: val}
+func (worker *filesystemWorker) enqueuePersist(key, val string) {
+	action := writerAction{
+		record: &record{
+			key:   key,
+			value: val,
+		},
+		action: fsWrite,
+	}
+	worker.fsActionQueue <- action
+}
+
+func (worker *filesystemWorker) enqueueDelete(key string) {
+	action := writerAction{
+		record: &record{
+			key: key,
+		},
+		action: fsDelete,
+	}
+	worker.fsActionQueue <- action
 }
 
 func (worker *filesystemWorker) writeFile(path, content string) {
@@ -71,11 +93,23 @@ func (worker *filesystemWorker) readContent(path string) string {
 	return contents
 }
 
+func (worker *filesystemWorker) deleteFile(path string) {
+	errorDeleting := os.Remove(path)
+	if errorDeleting != nil {
+		log.Fatal("Error deleting file")
+	}
+}
+
 func (worker *filesystemWorker) start() {
 	for {
-		persistent := <-worker.writer
-		filename, content := persistent.filename, persistent.content
+		enqueuedAction := <-worker.fsActionQueue
+		filename, content, action := enqueuedAction.record.key, enqueuedAction.record.value, enqueuedAction.action
 		path := filepath.Join(worker.basepath, filename)
-		worker.writeFile(path, content)
+		switch action {
+		case fsWrite:
+			worker.writeFile(path, content)
+		case fsDelete:
+			worker.deleteFile(path)
+		}
 	}
 }

@@ -35,7 +35,7 @@ func (cache *Cache) load(wg *sync.WaitGroup) {
 func (cache *Cache) Store(key, val string) {
 	go func(cache *Cache) {
 		cache.db.put(key, val)
-		cache.fsWorker.persist(key, val)
+		cache.fsWorker.enqueuePersist(key, val)
 	}(cache)
 }
 
@@ -46,5 +46,6 @@ func (cache *Cache) Get(key string) (string, bool) {
 func (cache *Cache) Remove(key string) {
 	go func(cache *Cache) {
 		cache.db.remove(key)
+		cache.fsWorker.enqueueDelete(key)
 	}(cache)
 }
